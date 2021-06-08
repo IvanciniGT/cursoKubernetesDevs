@@ -1,0 +1,110 @@
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+    name: wordpress
+
+spec:
+    ports:
+        - port: 80
+          targetPort: 80 # Contenedor
+          nodePort: 31000
+    selector:
+        app: wordpress
+    # Es un servicio público. Por tanto, lo podría "publicar":
+    # - Montando el servicio como LoadBalancer. Pero esto funcionaría solo si: 
+    #       - Si alguien externo me ofrece ese tipo de servicios.
+    #           - Si trabajo con un cloud, el cloud me lo da.
+    #           - Si tengo una instalación on premises... podría montar YO el programa: MetalLB (Esto es ajeno a Kubernetes)
+    # - Montando el servicio como NodePort. Pero tendriamos que montar nosotros un balanceador externo.
+    #       - Esto me puede venir bien para probar, jugar, accediendo directamente a la IP de un nodo. No tendría HA. >>>>>><<<<<<<<<<<<<<<<
+    # - Montando un Ingress, es decir: Unas reglas para un reverse proxy configurado en Kubernetes. Pero...
+    #       - Esto requiere tener montado un reverse proxy en kubernetes ( ingress-controller).
+    #       - A su vez, el ingress-controller necesita montar un servicio de tipo: LoadBalancer.
+    type: NodePort
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+    name: mysql
+
+spec:
+    type: ClusterIP # Privados
+    ports:
+        - port: 3306
+          targetPort: 3306 # Contenedor
+    selector:
+        app: mysql
+---
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+    name: wordpress
+
+spec:
+    replicas: 1
+    
+    selector: 
+        matchLabels:
+            app: wordpress
+            
+    template:
+        metadata:
+            name: wordpress-template
+            labels:
+                app: wordpress
+        spec:
+            containers:
+              - name: wordpress
+                image: wordpress
+                ports:
+                  - containerPort: 80
+                env:
+                  - name: WORDPRESS_DB_HOST
+                    value: mysql
+                  - name: WORDPRESS_DB_USER
+                    value: exampleuser
+                  - name: WORDPRESS_DB_PASSWORD
+                    value: examplepass
+                  - name: WORDPRESS_DB_NAME
+                    value: exampledb
+#      - wordpress:/var/www/html
+
+---
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+    name: mysql
+
+spec:
+    replicas: 1
+    
+    selector: 
+        matchLabels:
+            app: mysql
+            
+    template:
+        metadata:
+            name: mysql-template
+            labels:
+                app: mysql
+        spec:
+            containers:
+              - name: mysql
+                image: mysql:5.7
+                ports:
+                  - containerPort: 3306
+                env:
+                  - name: MYSQL_RANDOM_ROOT_PASSWORD
+                    value: "1"
+                  - name: MYSQL_USER
+                    value: exampleuser
+                  - name: MYSQL_PASSWORD
+                    value: examplepass
+                  - name: MYSQL_DATABASE
+                    value: exampledb
+#      - db:/var/lib/mysql
