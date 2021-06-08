@@ -1,0 +1,28 @@
+kind: Deployment 
+apiVersion: apps/v1
+
+metadata:
+    name: mi-deployment
+
+spec:
+    replicas: 5
+    
+    selector:
+        matchLabels:
+            mietiqueta: nginx-template 
+    
+    template:
+        metadata:
+            name: mi-plantilla-pods
+            labels:
+                mietiqueta: nginx-template 
+        spec:
+            containers:
+                -    name: nginx
+                     image: nginx
+                     ports:
+                        - containerPort: 80
+                        #- containerPort: 443
+#                     env:
+#                        - name: WORDPRESS_DB_HOST
+#                          value: db

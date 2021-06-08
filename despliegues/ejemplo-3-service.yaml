@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+    name: nginx   # Este es el nombre que se resolverá a través de DNS
+
+spec:
+    #type: ClusterIP # NodePort LoadBalancer
+    #clusterIP: 10.109.137.12
+
+    ports:
+        - port: 96 # Las peticiones que se realicen a este servicio en su puerto 96
+                   # Se enrutan al puerto 80, de ? los pods que ofrencen este servicio.
+          targetPort: 80
+          #nodePort: 32000 # Si no lo configuro, kubernetes me da uno por defacto
+    selector:
+        mietiqueta: nginx-template
+    
+    
+    
+# Cuando creamos un servicio, dentro de Kubernetes, el servicio tiene una dirección IP, igual que un POD.
