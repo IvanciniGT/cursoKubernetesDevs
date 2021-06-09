@@ -1,0 +1,94 @@
+kind: Namespace
+apiVersion: v1
+
+metadata:
+    name: pruebas
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+    name: peticion-volumen-deployment
+    namespace: pruebas
+
+spec:
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce
+---
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+    name: deployment
+    namespace: pruebas
+
+spec:
+    replicas: 3
+    
+    selector: 
+        matchLabels:
+            app: deployment
+            
+    template:
+        metadata:
+            name: deployment-template
+            labels:
+                app: deployment
+        spec:
+            volumes:
+                - name: volumen-persistente-deployment
+                  persistentVolumeClaim:
+                    claimName: peticion-volumen-deployment
+            containers:
+              - name: contenedor1
+                volumeMounts:
+                    - name: volumen-persistente-deployment
+                      mountPath: /datos
+                image: fedora:latest
+                command: [ 'sh' , '-c' , 'sleep 3600;' ]
+
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+
+metadata:
+    name: statefulset
+    namespace: pruebas
+
+spec:
+    replicas: 3
+    
+    serviceName: servicio-statefulset
+    
+    selector: 
+        matchLabels:
+            app: statefulset
+            
+    template: # Plantilla del POD
+        metadata:
+            name: statefulset-template
+            labels:
+                app: statefulset
+        spec:
+            containers:
+              - name: contenedor1
+                volumeMounts:
+                    - name: volumen-persistente-statefulset
+                      mountPath: /datos
+                image: fedora:latest
+                command: [ 'sh' , '-c' , 'sleep 3600;' ]
+    volumeClaimTemplates: # Plantilla del POD
+     -  metadata:
+            name: volumen-persistente-statefulset
+        spec:
+            resources:
+                requests:
+                    storage: 10Gi
+            storageClassName: redundante
+            accessModes:
+                - ReadWriteOnce
