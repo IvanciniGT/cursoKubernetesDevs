@@ -1,9 +1,85 @@
+## ESTO LO DEBERIA SACAR A OTRO FICHERO
 ---
+kind: Namespace
+apiVersion: v1
+
+metadata:
+    name: wordpress
+---
+kind: PersistentVolume
+apiVersion: v1
+
+metadata:
+    name: volumen-1
+
+spec:
+    # A que claims se va a asignar
+    capacity:
+        storage: 200Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce 
+    # Tipo de volumen
+    hostPath:   # Normalmente esto no lo hago. Estos volumenes van a estar externalizados
+          path: /home/ubuntu/environment/datos/vol1
+          type: DirectoryOrCreate
+---
+kind: PersistentVolume
+apiVersion: v1
+
+metadata:
+    name: volumen-2
+
+spec:
+    # A que claims se va a asignar
+    capacity:
+        storage: 200Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce 
+    # Tipo de volumen
+    hostPath:   # Normalmente esto no lo hago. Estos volumenes van a estar externalizados
+          path: /home/ubuntu/environment/datos/vol2
+          type: DirectoryOrCreate
+## ESTO LO DEBERIA SACAR A OTRO FICHERO
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+    name: peticion-volumen-wp
+    namespace: wordpress
+
+spec:
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce 
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+    name: peticion-volumen-bbdd
+    namespace: wordpress
+
+spec:
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce 
+---
+## ESTO LO DEBERIA SACAR A OTRO FICHERO
 kind: ConfigMap
 apiVersion: v1
 
 metadata:
     name: configuracion-bbdd
+    namespace: wordpress
 
 data:
     db_name: mibbddwordpress
@@ -13,16 +89,19 @@ apiVersion: v1
 
 metadata:
     name: secretos-bbdd
+    namespace: wordpress
 
 data:
     usuario: bWl1c3Vhcmlv
     password: bWlwYXNzd29yZAo=
+####
 ---
 kind: Service
 apiVersion: v1
 
 metadata:
     name: wordpress
+    namespace: wordpress
 
 spec:
     ports:
@@ -48,6 +127,7 @@ apiVersion: v1
 
 metadata:
     name: mysql
+    namespace: wordpress
 
 spec:
     type: ClusterIP # Privados
@@ -62,6 +142,7 @@ apiVersion: apps/v1
 
 metadata:
     name: wordpress
+    namespace: wordpress
 
 spec:
     replicas: 1
@@ -76,8 +157,15 @@ spec:
             labels:
                 app: wordpress
         spec:
+            volumes:
+                - name: volumen-persistente-wp
+                  persistentVolumeClaim:
+                    claimName: peticion-volumen-wp
             containers:
-              - name: wordpress
+              - volumeMounts:
+                    - name: volumen-persistente-wp
+                      mountPath: /var/www/html
+                name: wordpress
                 image: wordpress
                 ports:
                   - containerPort: 80
@@ -99,7 +187,6 @@ spec:
                         configMapKeyRef:
                             name: configuracion-bbdd
                             key: db_name
-#      - wordpress:/var/www/html
 
 ---
 kind: Deployment
@@ -107,6 +194,7 @@ apiVersion: apps/v1
 
 metadata:
     name: mysql
+    namespace: wordpress
 
 spec:
     replicas: 1
@@ -121,8 +209,15 @@ spec:
             labels:
                 app: mysql
         spec:
+            volumes:
+                - name: volumen-persistente-bbdd
+                  persistentVolumeClaim:
+                    claimName: peticion-volumen-bbdd
             containers:
-              - name: mysql
+              - volumeMounts:
+                    - name: volumen-persistente-bbdd
+                      mountPath: /var/lib/mysql
+                name: mysql
                 image: mysql:5.7
                 ports:
                   - containerPort: 3306
@@ -144,4 +239,4 @@ spec:
                         configMapKeyRef:
                             name: configuracion-bbdd
                             key: db_name
-#      - db:/var/lib/mysql
+
