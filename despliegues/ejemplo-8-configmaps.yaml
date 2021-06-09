@@ -1,0 +1,86 @@
+---
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: configuracion
+
+data:
+    dato1: mi dato 1
+    dato2: otra cosa
+    dato3: otra cosa mas
+    dato4.properties: |
+        Yo lo que escribiendo no quiero que le toque ni una triste coma
+        Que ademas puedo poner muchas lineas
+        que se van a mantener
+        si hacer sosas raras, ni usuar caracteres espaciales
+        Que puedo poner " ' # lo que quiera
+            Que apuedo echar esto a la derecha
+        Que además puedo dejar lineas en blanco entre medias
+        
+        Como esa de ahi arriba
+        
+        
+        
+        
+---
+kind: Pod
+apiVersion: v1
+
+metadata:
+    name: configuraciones
+
+spec:
+    containers:
+    
+        - name: fedora # weblogic websphere ---> log
+          image: fedora:latest
+          # yum
+          command: [ 'sh' , '-c' , 'sleep 3600;' ]
+          volumeMounts:
+            - name: carpeta-persistente
+              mountPath: /root   # Aqui
+          env:
+            - name: MIVAR1
+              valueFrom:
+                configMapKeyRef:
+                    name: configuracion
+                    key: dato1
+              
+        - name: ubuntu # Filebeat fluentd
+          image: ubuntu:latest
+          # yum
+          command: [ 'sh' , '-c' , 'sleep 3600;' ]
+          volumeMounts:
+            - name: carpeta-persistente
+              mountPath: /logs 
+            - name: mi-configuracion
+              mountPath: /configuracion
+              
+          envFrom:
+            - configMapRef:
+                name: configuracion
+             
+    volumes:
+        - name: mi-configuracion
+          configMap: #secret
+            name: configuracion
+            # Inyectar ficheros de configuracion dentro de un contenedor
+            
+        - name: carpeta-persistente
+          # Tipo de volumen 
+          #hostPath:                #### ESTO ES PARA JUGAR !!!!!! PARA DESARROLLO !!!!
+          #  path: /home/ubuntu/environment/datos/carpeta
+          #  type: DirectoryOrCreate
+                  # Directory
+                  # File
+                  # FileOrCreate
+          #emptyDir: {} # Tipo de volumen que no tiene persistencia
+                       # Lo usamos solo para compartir ficheros / directorios entre contenedores
+                       # Contenedores del mismo POD
+                       # Kubernetes crearia un directorio en el host = que si fuera hostpath, pero:
+                        # -1 No tengo npi de donde está ese directorio... y además no me interesa
+                        # -2 El directorio se borrará con el contenedor
+          emptyDir:
+            medium: Memory
+                # En este caso, se crea una carpeta con soporte en RAM

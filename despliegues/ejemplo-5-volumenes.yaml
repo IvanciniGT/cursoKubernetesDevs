@@ -1,0 +1,69 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+
+metadata:
+    name: mi-peticion-volumen-mysql
+
+spec:
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce # Pueda leer y escribir ... pero solo YO que lo he pedido
+        # ReadWriteMany
+        # ReadOMany
+---
+kind: Pod
+apiVersion: v1
+
+metadata:
+    name: volumenes
+
+spec:
+    containers:
+    
+        - name: fedora # weblogic websphere ---> log
+          image: fedora:latest
+          # yum
+          command: [ 'sh' , '-c' , 'sleep 3600;' ]
+          volumeMounts:
+            - name: carpeta-persistente
+              mountPath: /root   # Aqui
+              
+        - name: ubuntu # Filebeat fluentd
+          image: ubuntu:latest
+          # yum
+          command: [ 'sh' , '-c' , 'sleep 3600;' ]
+          volumeMounts:
+            - name: carpeta-persistente
+              mountPath: /logs 
+             
+            - name: datos-bbdd
+              mountPath: /var/lib/mysql
+              
+    volumes:
+        - name: datos-bbdd
+          # Tipo de volumen >>>>>  Peticion DE VOLUMEN
+          persistentVolumeClaim:
+            claimName: mi-peticion-volumen-mysql
+          
+          
+        - name: carpeta-persistente
+          # Tipo de volumen 
+          #hostPath:                #### ESTO ES PARA JUGAR !!!!!! PARA DESARROLLO !!!!
+          #  path: /home/ubuntu/environment/datos/carpeta
+          #  type: DirectoryOrCreate
+                  # Directory
+                  # File
+                  # FileOrCreate
+          #emptyDir: {} # Tipo de volumen que no tiene persistencia
+                       # Lo usamos solo para compartir ficheros / directorios entre contenedores
+                       # Contenedores del mismo POD
+                       # Kubernetes crearia un directorio en el host = que si fuera hostpath, pero:
+                        # -1 No tengo npi de donde está ese directorio... y además no me interesa
+                        # -2 El directorio se borrará con el contenedor
+          emptyDir:
+            medium: Memory
+                # En este caso, se crea una carpeta con soporte en RAM

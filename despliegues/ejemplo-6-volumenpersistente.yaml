@@ -1,0 +1,20 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+
+metadata:
+    name: volumen-mysql
+
+spec:
+    # A que claims se va a asignar
+    capacity:
+        storage: 200Gi
+    storageClassName: redundante
+    accessModes:
+        - ReadWriteOnce 
+    # Tipo de volumen
+    hostPath:   # Normalmente esto no lo hago. Estos volumenes van a estar externalizados
+          path: /home/ubuntu/environment/datos/persistente
+          type: DirectoryOrCreate
+---
+# Lo normal es que los volumenes ean creado AUTOMATICAMENTE por un PROVISIONADOR

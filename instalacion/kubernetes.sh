@@ -18,6 +18,8 @@ sudo touch /etc/apt/sources.list.d/kubernetes.list
 echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update -y
 
+sudo apt install kubeadm -y
+
 # Inicializacion del cluster
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 
