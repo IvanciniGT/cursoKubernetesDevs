@@ -63,3 +63,30 @@ Para configurar los pods
 # ConfigMaps
 # Secrets       <<<< Almacenarán información sensible
                      Dentro de kubernetes se almacenan encriptados
+                     
+                     
+-----
+Deployment
+    Numero replicas 3
+    Plantilla de Pod
+        Contenedores
+        Volumenes < PV1
+        
+            | Pod-asfakjdsghgf74ftgk < PV1 < Mismo PV
+SERVICIO    | Pod-adkjfhgiuyfe74iuaf < PV1 < Mismo PV 
+  LB        | Pod-dasfkjgekjfg487fad < PV1 < Mismo PV
+
+# Apache, Nginx, WORDPRESS
+-----
+
+WORDPRESS: Montar un sitio web, blog
+    Apache + Programas en php
+        En algun directorio del wordpress < AL QUE MONTE UN VOLUMEN CON PERSISTENCIA
+
+
+MYSQL < Cluster
+                    |  Mysql1 < QUIERO QUE TENGA SUS PROPIOS DATOS
+                    |    ^v
+LB Servicio         |  *Mysql2 < QUIERO QUE TENGA SUS PROPIOS DATOS
+                    |    ^v
+                    |  Mysql3 < QUIERO QUE TENGA SUS PROPIOS DATOS
