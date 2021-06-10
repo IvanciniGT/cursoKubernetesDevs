@@ -1,0 +1,51 @@
+---
+kind: LimitRange
+apiVersion: v1
+
+metadata:
+    name: limites-para-desarrolladores-espabilaos
+    namespace: XXXXXXXX
+
+spec:
+    limits:
+        - type: "Pod"
+          max: 
+            cpu: "1"
+            memory: "2Gi"
+          min: 
+            cpu: "1"
+            memory: "2Gi"
+          default: 
+            cpu: "1"
+            memory: "2Gi"
+          defaultRequest: 
+            cpu: "100m"
+            memory: "0.5Gi"
+            
+        - type: "Container"
+          max: 
+            cpu: "1"
+            memory: "2Gi"
+          min: 
+            cpu: "1"
+            memory: "2Gi"
+          default: 
+            cpu: "1"
+            memory: "2Gi"
+          defaultRequest: 
+            cpu: "100m"
+            memory: "0.5Gi"
+---
+
+# Aplic al total de un namespace
+kind: ResourceQuota
+apiVersion: v1
+
+metadata:
+    name: limites-aplicaciones-espabiladas
+    
+spec:
+    hard:
+        cpu: "5"
+        memory: "5Gb"
+        pods: "10"
