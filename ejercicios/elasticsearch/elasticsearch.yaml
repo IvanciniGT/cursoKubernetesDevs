@@ -49,6 +49,7 @@ metadata:
 
 data:
     ES_JAVA_OPTS: -Xms220m -Xmx220m
+    discovery.seed_hosts:       elasticsearch-maestro
 ---
 # ConfigMap Coordinadores
 kind: ConfigMap
@@ -59,6 +60,7 @@ metadata:
 
 data:
     ES_JAVA_OPTS: -Xms220m -Xmx220m
+    discovery.seed_hosts:       elasticsearch-maestro
 ---
 # Servicio Kibana
 kind: Service
