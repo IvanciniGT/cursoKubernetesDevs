@@ -1,0 +1,372 @@
+---
+# ConfigMap Maestros
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: configuracion-general
+
+data:
+    cluster.name: MiCluster
+    node.master: "false"
+    node.voting_only: "false"
+    node.data: "false" 
+    node.ingest: "false" 
+    node.remote_cluster_client: "false"
+---
+# ConfigMap Maestros
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: configuracion-maestros
+
+data:
+    ES_JAVA_OPTS: -Xms220m -Xmx220m
+    cluster.initial_master_nodes: elasticsearch-maestro-0,elasticsearch-maestro-1,elasticsearch-maestro-2
+    # Ahora damos la dirección de red de CADA uno de los nodos
+    discovery.seed_hosts:       "elasticsearch-maestro-0.elasticsearch-maestro,\
+                                elasticsearch-maestro-1.elasticsearch-maestro,\
+                                elasticsearch-maestro-2.elasticsearch-maestro"
+---
+# ConfigMap Data
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: configuracion-data
+
+data:
+    ES_JAVA_OPTS: -Xms220m -Xmx220m
+    discovery.seed_hosts:       elasticsearch-maestro
+---
+# ConfigMap Ingesta
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: configuracion-ingesta
+
+data:
+    ES_JAVA_OPTS: -Xms220m -Xmx220m
+---
+# ConfigMap Coordinadores
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+    name: configuracion-coordinadores
+
+data:
+    ES_JAVA_OPTS: -Xms220m -Xmx220m
+---
+# Servicio Kibana
+kind: Service
+apiVersion: v1
+metadata:
+    name: kibana
+spec:
+    # Este servicio lo va a usar gente de fuera del clustr de kubernetes?
+    # SI: Lo quiero tener expuesto. Alternativas:
+    #       Servicio NodePort
+    #       Servicio LoadBalancer
+    #       Servicio ClusterIP + Ingress   ****
+    type: NodePort
+    ports:
+        - port: 5601
+          targetPort: 5601
+          nodePort: 30601
+    selector:
+        app: kibana
+---
+# Servicio Maestro
+
+kind: Service
+apiVersion: v1
+metadata:
+    name: elasticsearch-maestro
+spec:
+    # Este servicio lo va a usar gente de fuera del clustr de kubernetes?
+    # NO: No lo quiero tener expuesto. Servicio ClusterIP
+    type: ClusterIP
+    ports:
+        - name: publico
+          port: 9200
+          targetPort: 9200
+        - name: interno
+          port: 9300
+          targetPort: 9300
+    selector:
+        app: elasticsearch-maestro
+---
+# Servicio Coordinadores
+kind: Service
+apiVersion: v1
+metadata:
+    name: elasticsearch-coordinador
+spec:
+    type: NodePort
+    ports:
+        - name: publico
+          port: 9200
+          targetPort: 9200
+          nodePort: 30200
+        - name: interno
+          port: 9300
+          targetPort: 9300
+          nodePort: 30300
+    selector:
+        app: elasticsearch-coordinador
+---
+# Servicio Ingesta
+kind: Service
+apiVersion: v1
+metadata:
+    name: elasticsearch-ingesta
+spec:
+    type: NodePort
+    ports:
+        - name: publico
+          port: 9200
+          targetPort: 9200
+          nodePort: 30201
+        - name: interno
+          port: 9300
+          targetPort: 9300
+          nodePort: 30301
+    selector:
+        app: elasticsearch-ingesta
+---
+# Deployment Kibana
+kind: Deployment 
+apiVersion: apps/v1
+metadata:
+    name: kibana
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: kibana 
+    template:
+        metadata:
+            name: plantilla-kibana
+            labels:
+                app: kibana 
+        spec:
+            containers:
+                -    name: kibana
+                     image: docker.elastic.co/kibana/kibana:7.7.0
+                     ports:
+                        - containerPort: 5601
+                     env:
+                        - name: ELASTICSEARCH_HOSTS
+                          value: "http://elasticsearch-coordinador:9200"
+                        - name: SERVER_NAME
+                          valueFrom:
+                            fieldRef:
+                                fieldPath: metadata.name # Tomar el nombre del POD
+                        - name: SERVER_HOST
+                          valueFrom:
+                            fieldRef:
+                                fieldPath: metadata.name # Tomar el nombre del POD
+---
+# StatefulSet Maestros
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: elasticsearch-maestro
+spec:
+    replicas: 3
+    serviceName: elasticsearch-maestro
+    selector: 
+        matchLabels:
+            app: elasticsearch-maestro
+            
+    template:
+        metadata:
+            name: elasticsearch-maestro
+            labels:
+                app: elasticsearch-maestro
+        spec:
+            containers:
+              - name: elasticsearch
+                volumeMounts:
+                    - name: volumen-persistente-elasticsearch
+                      mountPath: /usr/share/elasticsearch/data
+                image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+                env:
+                    - name: node.master
+                      value: "true"                   
+                    - name: node.name
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.name # Tomar el nombre del POD
+
+                envFrom:
+                    - configMapRef:
+                            name: configuracion-general
+                    - configMapRef:
+                            name: configuracion-maestros
+
+    volumeClaimTemplates: # Plantilla del POD
+     -  metadata:
+            name: volumen-persistente-elasticsearch
+        spec:
+            resources:
+                requests:
+                    storage: 10Gi
+            storageClassName: redundante
+            accessModes:
+                - ReadWriteOnce
+---
+# StatefulSet Data
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: elasticsearch-data
+spec:
+    replicas: 2
+    serviceName: elasticsearch-data
+    selector: 
+        matchLabels:
+            app: elasticsearch-data
+            
+    template:
+        metadata:
+            name: elasticsearch-data
+            labels:
+                app: elasticsearch-data
+        spec:
+            containers:
+              - name: elasticsearch
+                volumeMounts:
+                    - name: volumen-persistente-elasticsearch
+                      mountPath: /usr/share/elasticsearch/data
+                image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+                env:
+                    - name: node.data
+                      value: "true"                   
+                    - name: node.name
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.name # Tomar el nombre del POD
+
+                envFrom:
+                    - configMapRef:
+                            name: configuracion-general
+                    - configMapRef:
+                            name: configuracion-data
+
+    volumeClaimTemplates: # Plantilla del POD
+     -  metadata:
+            name: volumen-persistente-elasticsearch
+        spec:
+            resources:
+                requests:
+                    storage: 10Gi
+            storageClassName: redundante
+            accessModes:
+                - ReadWriteOnce
+---
+# StatefulSet Ingesta
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: elasticsearch-ingesta
+spec:
+    replicas: 2
+    serviceName: elasticsearch-ingesta
+    selector: 
+        matchLabels:
+            app: elasticsearch-ingesta
+            
+    template:
+        metadata:
+            name: elasticsearch-ingesta
+            labels:
+                app: elasticsearch-ingesta
+        spec:
+            containers:
+              - name: elasticsearch
+                volumeMounts:
+                    - name: volumen-persistente-elasticsearch
+                      mountPath: /usr/share/elasticsearch/data
+                image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+                env:
+                    - name: node.ingest
+                      value: "true"                   
+                    - name: node.name
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.name # Tomar el nombre del POD
+
+                envFrom:
+                    - configMapRef:
+                            name: configuracion-general
+                    - configMapRef:
+                            name: configuracion-ingesta
+
+    volumeClaimTemplates: # Plantilla del POD
+     -  metadata:
+            name: volumen-persistente-elasticsearch
+        spec:
+            resources:
+                requests:
+                    storage: 10Gi
+            storageClassName: redundante
+            accessModes:
+                - ReadWriteOnce
+---
+# StatefulSet Coordinador
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: elasticsearch-coordinadores
+spec:
+    replicas: 2
+    serviceName: elasticsearch-coordinadores
+    selector: 
+        matchLabels:
+            app: elasticsearch-coordinadores
+            
+    template:
+        metadata:
+            name: elasticsearch-coordinadores
+            labels:
+                app: elasticsearch-coordinadores
+        spec:
+            containers:
+              - name: elasticsearch
+                volumeMounts:
+                    - name: volumen-persistente-elasticsearch
+                      mountPath: /usr/share/elasticsearch/data
+                image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+                env:
+                    - name: node.name
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.name # Tomar el nombre del POD
+
+                envFrom:
+                    - configMapRef:
+                            name: configuracion-general
+                    - configMapRef:
+                            name: configuracion-coordinadores
+
+    volumeClaimTemplates: # Plantilla del POD
+     -  metadata:
+            name: volumen-persistente-elasticsearch
+        spec:
+            resources:
+                requests:
+                    storage: 10Gi
+            storageClassName: redundante
+            accessModes:
+                - ReadWriteOnce
+---
+# PersistentVolume para cada nodo
+---
