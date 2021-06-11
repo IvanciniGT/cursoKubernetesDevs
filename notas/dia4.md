@@ -155,7 +155,7 @@ He montado un programa de DeepLearning  <<<<<  GPU Potente
 Tengo un cluster que abarca 4 zonas geográficas <<<< Continuidad del servicio 
                                                 <<<< Requisitos LEGALES !!!!! 
     Si quiero montar una BBDD
-        Donde la quiero montar?     <<<<<<<     Scheduller
+        Donde la quiero montar?     <<<<<<<     Scheduler
             1 en cada zona
 
 Quiero un disco duro rapidito sin persistencia <<< Los datos no los guardo fuera del nodo?

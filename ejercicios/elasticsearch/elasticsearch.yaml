@@ -366,6 +366,7 @@ spec:
                             name: configuracion-
                             
                 #### Indicaciones para el Scheduller
+                #nodeName: worker17
                 nodeSelector: # NO ES A PRIORI RECOMENDADA . TAMPOCO ESTA COMO DEPRECATED
                     # Etiquetas que estén definidas a nivel de Nodo
                     kubernetes.io/arch: amd64
@@ -376,20 +377,61 @@ spec:
                 affinity:
                     nodeAffinity: 
                         requiredDuringSchedulingIgnoredDuringExecution:
-                            
+                            nodeSeletorTerms:
+                                - matchExpressions:
+                                    - key: kubernetes.io/arch
+                                      operator: In # NotIn Exists DoesNotExist Gt Lt
+                                      values: 
+                                        - amd64
                         preferredDuringSchedulingIgnoredDuringExecution:
-
+                            - weight: 1
+                              preference:
+                                  matchExpressions:
+                                        - key: kubernetes.io/arch
+                                          operator: In # NotIn Exists DoesNotExist Gt Lt
+                                          values: 
+                                            - amd64
                         # requiredDuringSchedulingRequiredDuringExecution:
                     podAffinity:
                         requiredDuringSchedulingIgnoredDuringExecution:
-                            
+                            - labelSelector:
+                                matchExpressions:
+                                    - key: app
+                                      operator: Not # NotIn Exists DoesNotExist Gt Lt
+                                      values: 
+                                        - elasticsearch
+                              topologyKey: kubernetes.io/hostname
                         preferredDuringSchedulingIgnoredDuringExecution:
-
+                            - weight: 10
+                              podAffinityTerm:
+                                labelSelector:
+                                    matchExpressions:
+                                        - key: app
+                                          operator: Not # NotIn Exists DoesNotExist Gt Lt
+                                          values: 
+                                            - elasticsearch
+                                topologyKey: kubernetes.io/hostname
                     podAntiAffinity:
                         requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchExpressions:
+                                    - key: app
+                                      operator: In # NotIn Exists DoesNotExist Gt Lt
+                                      values: 
+                                        - elasticsearch
+                              topologyKey: kubernetes.io/hostname
                             
                         preferredDuringSchedulingIgnoredDuringExecution:
-                
+                            - weight: 10
+                              podAffinityTerm:
+                                labelSelector:
+                                    matchExpressions:
+                                        - key: app
+                                          operator: Not # NotIn Exists DoesNotExist Gt Lt
+                                          values: 
+                                            - elasticsearch
+                                topologyKey: kubernetes.io/hostname
+
     volumeClaimTemplates: # Plantilla del POD
      -  metadata:
             name: volumen-persistente-elasticsearch
