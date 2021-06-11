@@ -113,3 +113,11 @@ Charts de Helm     <<<<<     Sevilla    ( Bitnami ) VMWARE
 
 
 DEV->OPS: Cultura de la automatización
+
+--------
+
+HELM
+parametro --dry-run simula la instalacion
+comando template, install, uninstall, ______
+
+helm install wordpress-ivan bitnami/wordpress --namespace ivan --create-namespace -f wordpress.conf.yaml
