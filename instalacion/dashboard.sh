@@ -50,10 +50,10 @@ metadata:
 spec:
   tls:
     - hosts:
-      - dashboard.cluster
+      - ec2-52-19-192-177.eu-west-1.compute.amazonaws.com
       secretName: tls-secret
   rules:
-    - host: dashboard.cluster
+    - host: ec2-52-19-192-177.eu-west-1.compute.amazonaws.com
       http:
         paths:
         - path: /

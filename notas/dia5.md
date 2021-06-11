@@ -75,3 +75,41 @@ ASIA <<<
 AFRICA <<< 
     Nodo 5
     Nodo 6
+    
+    
+    
+NGINX PUERTO:80 IP:192.168.1.100
+    NginX atiende las peticiones que lleguen a ese puerto por parte de un cliente
+    Cuando me llegue ahi una peticion... la mando a otro sitio
+    nombre de host:    <<<< VirtualHost
+        http://tomcat.caixa.es ----> Tomcat
+        http://kibana.caixa.es ----> Kibana
+        Paths: 
+            /v1    ----> Kibana
+            /v2    ----> Kibana2
+
+CLIENTE :       URL:       http://192.168.1.100:80
+                                                PUERTO LO UNICO QUE NO VAMOS A CAMBIAR
+                            http://192.168.1.100:80/kibana
+                            http://192.168.1.100:80/tomcat
+                            
+                           IP - nombre DNS
+                           
+                           Muchos nombres DNS que lleven a la misma IP
+                           
+                           http://tomcat.caixa.es  -----> 192.168.1.100
+                           http://kibana.caixa.es  -----> 192.168.1.100
+                           http://wordpress.caixa.es  -----> 192.168.1.100
+                        
+                           SERVIDOR DNS
+dashboard.cluster       ----> 52.19.192.177
+                           
+                           
+                           
+-----
+
+
+Charts de Helm     <<<<<     Sevilla    ( Bitnami ) VMWARE
+
+
+DEV->OPS: Cultura de la automatización
